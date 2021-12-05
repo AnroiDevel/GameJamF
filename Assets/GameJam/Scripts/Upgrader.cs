@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 
 namespace GameJam
@@ -7,12 +7,10 @@ namespace GameJam
     {
         private void OnTriggerEnter2D(Collider2D collision)
         {
-            var perkInvisible = collision.gameObject.GetComponent<Invisible>();
-            if (perkInvisible != null)
-            {
-                perkInvisible.Upgrade();
-                Destroy(gameObject);
-            }
+            var invis = collision.GetComponent<Invisible>();
+            invis?.Upgrade();
+            Destroy(gameObject);
         }
     }
+
 }

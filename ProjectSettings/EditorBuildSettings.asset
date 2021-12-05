@@ -50,4 +50,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/GameJam/GameJam.unity
     guid: f125135a9805c544480ceed6bf7cda93
+  - enabled: 1
+    path: Assets/GameJam/GJ.unity
+    guid: 5c24f1bc83148d44394062a0e2ab8369
   m_configObjects: {}

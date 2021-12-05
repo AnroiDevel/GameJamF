@@ -11,39 +11,34 @@ namespace GameJam
 
         [SerializeField] private SpriteRenderer _renderer;
         [SerializeField] private float _timeInvisible = 5.0f;
-        [SerializeField] private float _timeRecovery = 10.0f;
+
+
         [SerializeField] private Damageable _damageable;
         [SerializeField] private PlayerInput _playerInput;
         [SerializeField] private GameObject _iconInvisiblePrefab;
+        private Damager _damager;
 
-        private GameObject _iconInvisible;
         private InvisibleIcon _icon;
 
         private bool _isInvisibleOn;
-        private bool _isReady = true;
 
         #endregion
+
+        public bool IsInvisibleOn { get => _isInvisibleOn; }
 
 
         #region UnityMethods
 
         private void Start()
         {
-            var canvas = FindObjectOfType<Canvas>().transform;
-            _iconInvisible = Instantiate(_iconInvisiblePrefab, canvas);
-            _icon = FindObjectOfType(typeof(InvisibleIcon)) as InvisibleIcon;
-        }
+            var canvas = GetCanvas();
+            Instantiate(_iconInvisiblePrefab, canvas.transform);
 
-        private void Update()
-        {
-            if (!_isInvisibleOn && _isReady)
-                if (Input.GetKeyDown(KeyCode.E))
-                {
-                    _iconInvisible?.SetActive(false);
-                    _isInvisibleOn = true;
-                    _isReady = false;
-                    StartCoroutine(InvisibleReady());
-                }
+            _icon = FindObjectOfType(typeof(InvisibleIcon)) as InvisibleIcon;
+            _playerInput?.DisableMeleeAttacking();
+            _playerInput?.DisableRangedAttacking();
+            _damager = gameObject.GetComponent<Damager>();
+
         }
 
         #endregion
@@ -51,12 +46,24 @@ namespace GameJam
 
         #region Methods
 
+        private Canvas GetCanvas()
+        {
+            var canvas = FindObjectOfType<Canvas>();
+            if (canvas == null)
+            {
+                var gameObject = new GameObject();
+                gameObject.AddComponent<Canvas>();
+                gameObject.name = "Canvas";
+                canvas = Instantiate(gameObject).GetComponent<Canvas>();
+            }
+            return canvas;
+        }
+
         private IEnumerator InvisibleReady()
         {
             StartCoroutine(Timer(_timeInvisible));
-            _damageable?.EnableInvulnerability();
-            _playerInput?.DisableMeleeAttacking();
-            _playerInput?.DisableRangedAttacking();
+            _damageable?.EnableInvulnerability(true);
+            _damager.EnableDamage();
             while (_isInvisibleOn)
             {
                 _renderer.color = Color.red;
@@ -64,34 +71,36 @@ namespace GameJam
                 _renderer.color = Color.blue;
                 yield return new WaitForSeconds(0.1f);
             }
-            _playerInput?.EnableMeleeAttacking();
-            _playerInput?.EnableRangedAttacking();
+            _damager.DisableDamage();
             _damageable?.DisableInvulnerability();
+
             _renderer.color = Color.white;
-            StartCoroutine(ReadyTimer(_timeRecovery));
         }
 
         private IEnumerator Timer(float time)
         {
+            var tempTime = time;
+            while (tempTime >= 0)
+            {
+                yield return new WaitForSeconds(1);
+                _icon.TimeValue?.Invoke((int)tempTime);
+                tempTime--;
+            }
 
-            yield return new WaitForSeconds(time);
             _isInvisibleOn = false;
         }
 
-        private IEnumerator ReadyTimer(float timeRecovery)
+        internal void TakePerk()
         {
-            yield return new WaitForSeconds(timeRecovery);
-            _isReady = true;
-            _iconInvisible?.SetActive(true);
-        }
+            if (!_isInvisibleOn)
+                _isInvisibleOn = true;
+            StartCoroutine(InvisibleReady());
 
+        }
         internal void Upgrade()
         {
-            _playerInput?.EnableMeleeAttacking();
-            _playerInput?.EnableRangedAttacking();
-
-            _playerInput = null;
-            _icon.Upgrade?.Invoke();
+            _timeInvisible = 9.0f;
+            _icon.UpgratedVisual?.Invoke();
         }
 
         #endregion  
